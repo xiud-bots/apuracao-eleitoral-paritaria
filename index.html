@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Apuração Eleitoral Paritária | Sistema de Votação</title>
+  <meta name="description" content="Sistema ágil e moderno de contagem e apuração de votos com pesos paritários por segmento (Docentes, Técnicos e Alunos) e múltiplas urnas.">
+  <meta name="theme-color" content="#0f172a">
+  
+  <!-- Tailwind CSS CDN com plugins -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nicacio: {
+              DEFAULT: '#f97316',
+              50: '#fff7ed',
+              100: '#ffedd5',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+            },
+            neilor: {
+              DEFAULT: '#16a34a',
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-orange-500 selection:text-white">
+
+  <!-- Header / Barra Superior -->
+  <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo e Título -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 via-amber-500 to-green-500 p-0.5 shadow-md shadow-orange-500/10 flex items-center justify-center">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+              <i data-lucide="vote" class="w-5 h-5 text-orange-400"></i>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              Apuração Eleitoral
+              <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Paritária
+              </span>
+            </h1>
+            <p class="text-xs text-slate-400 hidden sm:block">Docentes (1/3) • Técnicos (1/3) • Alunos (1/3)</p>
+          </div>
+        </div>
+
+        <!-- Ações do Header -->
+        <div class="flex items-center gap-2">
+          <!-- Indicador de Salvamento Local -->
+          <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/50 text-xs text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Salvo Localmente</span>
+          </div>
+
+          <!-- Botão de Som Mute/Unmute -->
+          <button id="btn-toggle-sound" title="Alternar efeitos sonoros" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700">
+            <i data-lucide="volume-2" class="w-4 h-4" id="sound-icon"></i>
+          </button>
+
+          <!-- Botão de Opções / Backup -->
+          <button id="btn-open-settings" title="Opções e Backup" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navegação por Abas (Mobile First) -->
+      <nav class="flex border-t border-slate-800/60 -mb-px space-x-2 sm:space-x-8 overflow-x-auto no-scrollbar py-1">
+        <button id="tab-vote" class="tab-btn active flex items-center gap-2 py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          <span>Votação na Urna</span>
+        </button>
+        <button id="tab-results" class="tab-btn flex items-center gap-2 py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all">
+          <i data-lucide="pie-chart" class="w-4 h-4"></i>
+          <span>Resultado Geral & Pesos</span>
+          <span id="badge-total-votos" class="px-1.5 py-0.2 bg-orange-500/20 text-orange-400 text-[11px] rounded-full font-bold">0</span>
+        </button>
+        <button id="tab-urnas" class="tab-btn flex items-center gap-2 py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          <span>Gerenciar Urnas</span>
+          <span id="badge-total-urnas" class="px-1.5 py-0.2 bg-slate-800 text-slate-400 text-[11px] rounded-full">3</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ================================================================= -->
+    <!-- ABA 1: VOTAÇÃO NA URNA (PRINCIPAL) -->
+    <!-- ================================================================= -->
+    <section id="view-vote" class="tab-view space-y-6">
+      
+      <!-- Seletor de Segmento e Urna Ativa -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <!-- Seleção de Segmento -->
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              1. Selecione o Segmento
+            </label>
+            <div class="grid grid-cols-3 gap-2 sm:gap-3" id="segment-selector-container">
+              <!-- Renderizado dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Seleção de Urna -->
+          <div class="flex-1">
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                2. Selecione a Urna de Votação
+              </label>
+              <button id="btn-quick-add-urna" class="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1 font-medium transition-colors">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                Nova Urna
+              </button>
+            </div>
+            <div class="relative">
+              <select id="select-active-urna" class="w-full bg-slate-800/90 border border-slate-700 text-white text-sm sm:text-base font-semibold rounded-xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer pr-10">
+                <!-- Populado dinamicamente -->
+              </select>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                <i data-lucide="chevron-down" class="w-5 h-5"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Banner com resumo da Urna Atual -->
+        <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-slate-300">
+          <div class="flex items-center gap-2">
+            <span id="active-urna-badge-segment" class="px-2 py-0.5 rounded-md font-bold uppercase text-[11px] bg-slate-800 text-slate-300">DOCENTES</span>
+            <span class="font-semibold text-white" id="active-urna-name-display">Urna 01</span>
+          </div>
+          <div class="flex items-center gap-3 text-slate-400">
+            <span>Total nesta urna: <strong class="text-white font-bold" id="active-urna-total-votos">0</strong> votos</span>
+            <span>•</span>
+            <span>Válidos: <strong class="text-emerald-400 font-bold" id="active-urna-validos">0</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL PRINCIPAL DE BOTÕES DE VOTAÇÃO -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        
+        <!-- CARD DO CANDIDATO 1: NICÁCIO (LARANJA) -->
+        <div class="bg-gradient-to-b from-orange-950/40 via-slate-900 to-slate-900 border-2 border-orange-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+          <div class="absolute -right-12 -top-12 w-44 h-44 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-widest text-orange-400 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-md shadow-orange-500/50"></span>
+                Candidato
+              </span>
+              <div class="px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 font-bold text-xs border border-orange-500/30" id="card-nicacio-percent-urn">
+                0.0% nesta urna
+              </div>
+            </div>
+
+            <div class="flex items-baseline justify-between mb-4">
+              <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">NICÁCIO</h2>
+              <div class="text-right">
+                <span class="text-3xl sm:text-5xl font-black text-orange-400 font-mono" id="count-nicacio-urna">0</span>
+                <span class="block text-[11px] text-slate-400 uppercase font-semibold">votos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-2">
+            <!-- BOTÃO GIGANTE +1 NICÁCIO -->
+            <button id="btn-add-nicacio" class="w-full py-5 sm:py-6 px-6 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-[0.98] text-white font-black text-xl sm:text-2xl shadow-xl shadow-orange-500/25 transition-all flex items-center justify-center gap-3 border-t border-orange-400/30 group">
+              <i data-lucide="plus-circle" class="w-7 h-7 group-hover:rotate-90 transition-transform"></i>
+              <span>VOTO NICÁCIO</span>
+            </button>
+
+            <!-- BOTÃO PEQUENO -1 NICÁCIO (COM POPUP) -->
+            <div class="flex justify-end">
+              <button id="btn-sub-nicacio" class="text-xs text-orange-400/80 hover:text-orange-300 hover:bg-orange-500/10 px-3 py-1.5 rounded-lg border border-orange-500/20 transition-all flex items-center gap-1.5">
+                <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                <span>Corrigir (-1 Nicácio)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD DO CANDIDATO 2: NEILOR (VERDE) -->
+        <div class="bg-gradient-to-b from-green-950/40 via-slate-900 to-slate-900 border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+          <div class="absolute -right-12 -top-12 w-44 h-44 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-md shadow-emerald-500/50"></span>
+                Candidato
+              </span>
+              <div class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30" id="card-neilor-percent-urn">
+                0.0% nesta urna
+              </div>
+            </div>
+
+            <div class="flex items-baseline justify-between mb-4">
+              <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">NEILOR</h2>
+              <div class="text-right">
+                <span class="text-3xl sm:text-5xl font-black text-emerald-400 font-mono" id="count-neilor-urna">0</span>
+                <span class="block text-[11px] text-slate-400 uppercase font-semibold">votos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-2">
+            <!-- BOTÃO GIGANTE +1 NEILOR -->
+            <button id="btn-add-neilor" class="w-full py-5 sm:py-6 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-700 hover:to-green-600 active:scale-[0.98] text-white font-black text-xl sm:text-2xl shadow-xl shadow-emerald-500/25 transition-all flex items-center justify-center gap-3 border-t border-emerald-400/30 group">
+              <i data-lucide="plus-circle" class="w-7 h-7 group-hover:rotate-90 transition-transform"></i>
+              <span>VOTO NEILOR</span>
+            </button>
+
+            <!-- BOTÃO PEQUENO -1 NEILOR (COM POPUP) -->
+            <div class="flex justify-end">
+              <button id="btn-sub-neilor" class="text-xs text-emerald-400/80 hover:text-emerald-300 hover:bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-all flex items-center gap-1.5">
+                <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                <span>Corrigir (-1 Neilor)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTÕES SECUNDÁRIOS: BRANCO E NULO -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        <!-- CARD BRANCO -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-bold">
+              B
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-200">Votos em Branco</h3>
+              <p class="text-xs text-slate-400 font-mono">Total nesta urna: <span id="count-branco-urna" class="text-white font-bold">0</span></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-sub-branco" title="Diminuir 1 voto em Branco" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors">
+              <i data-lucide="minus" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-add-branco" class="px-4 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 active:scale-95 text-white font-bold text-sm transition-all border border-slate-600 flex items-center gap-1.5 shadow-md">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>+1 Branco</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD NULO -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-950/40 border border-rose-800/40 flex items-center justify-center text-rose-400 font-bold">
+              N
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-200">Votos Nulos</h3>
+              <p class="text-xs text-slate-400 font-mono">Total nesta urna: <span id="count-nulo-urna" class="text-rose-400 font-bold">0</span></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-sub-nulo" title="Diminuir 1 voto Nulo" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors">
+              <i data-lucide="minus" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-add-nulo" class="px-4 py-2.5 rounded-xl bg-rose-900/40 hover:bg-rose-900/60 active:scale-95 text-rose-200 font-bold text-sm transition-all border border-rose-700/50 flex items-center gap-1.5 shadow-md">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>+1 Nulo</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LOG DOS ÚLTIMOS 10 VOTOS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-orange-400"></i>
+            <h3 class="font-bold text-sm sm:text-base text-white">Log de Atividades (Últimos Votos)</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400" id="log-filter-label">Urna atual</span>
+            <button id="btn-clear-log" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Limpar visualização</button>
+          </div>
+        </div>
+
+        <div id="votes-log-container" class="space-y-2">
+          <!-- Renderizado dinamicamente -->
+          <div class="text-center py-6 text-slate-500 text-xs italic">
+            Nenhum voto registrado ainda nesta urna.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- ABA 2: RESULTADOS GERAIS & PESOS PARITÁRIOS -->
+    <!-- ================================================================= -->
+    <section id="view-results" class="tab-view hidden space-y-6">
+
+      <!-- PLACAR GERAL PONDERADO (DESTAQUE MÁXIMO) -->
+      <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 border-b border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-orange-400">Resultado Oficial Consolidado</span>
+            <h2 class="text-xl sm:text-3xl font-extrabold text-white tracking-tight">Apuração Geral Ponderada (1/3 por Segmento)</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-print-report" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition-colors">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>Imprimir / PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Indicador de Status / Liderança -->
+        <div id="leader-banner" class="mb-6 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="leader-avatar" class="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center font-black text-orange-400">
+              ?
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">Situação Atual:</p>
+              <p id="leader-text" class="text-sm sm:text-base font-bold text-white">Aguardando votos válidos</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400 block">Diferença Ponderada</span>
+            <span id="diff-percent" class="text-sm sm:text-base font-extrabold font-mono text-white">0.00%</span>
+          </div>
+        </div>
+
+        <!-- Barras de Percentual Ponderado -->
+        <div class="space-y-5">
+          
+          <!-- Nicácio Barra -->
+          <div>
+            <div class="flex justify-between items-baseline mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                <span class="font-extrabold text-base sm:text-xl text-white">NICÁCIO</span>
+                <span class="text-xs text-slate-400 font-mono">(<span id="res-nicacio-abs">0</span> votos absolutos)</span>
+              </div>
+              <span id="res-nicacio-weighted-pct" class="text-2xl sm:text-3xl font-black text-orange-400 font-mono">0.00%</span>
+            </div>
+            <div class="w-full h-5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60">
+              <div id="bar-nicacio-pct" class="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Neilor Barra -->
+          <div>
+            <div class="flex justify-between items-baseline mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                <span class="font-extrabold text-base sm:text-xl text-white">NEILOR</span>
+                <span class="text-xs text-slate-400 font-mono">(<span id="res-neilor-abs">0</span> votos absolutos)</span>
+              </div>
+              <span id="res-neilor-weighted-pct" class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">0.00%</span>
+            </div>
+            <div class="w-full h-5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60">
+              <div id="bar-neilor-pct" class="h-full bg-gradient-to-r from-emerald-600 to-green-400 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Totais Resumo -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-6 border-t border-slate-800 text-center">
+          <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+            <span class="text-[11px] uppercase font-bold text-slate-400 block">Total Geral</span>
+            <span id="res-total-geral" class="text-lg sm:text-xl font-black text-white font-mono">0</span>
+          </div>
+          <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+            <span class="text-[11px] uppercase font-bold text-emerald-400 block">Votos Válidos</span>
+            <span id="res-total-validos" class="text-lg sm:text-xl font-black text-emerald-400 font-mono">0</span>
+          </div>
+          <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+            <span class="text-[11px] uppercase font-bold text-slate-400 block">Brancos</span>
+            <span id="res-total-brancos" class="text-lg sm:text-xl font-black text-slate-300 font-mono">0</span>
+          </div>
+          <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+            <span class="text-[11px] uppercase font-bold text-rose-400 block">Nulos</span>
+            <span id="res-total-nulos" class="text-lg sm:text-xl font-black text-rose-400 font-mono">0</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PAINEL EXPLICATIVO DE PESOS RELATIVOS POR SEGMENTO -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center gap-2 mb-3">
+          <i data-lucide="scale" class="w-5 h-5 text-amber-400"></i>
+          <h3 class="font-bold text-base text-white">Equivalência e Pesos Específicos do Voto</h3>
+        </div>
+        <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+          Como cada segmento detém exatamente <strong>1/3 (33,33%)</strong> do poder de voto total, o peso individual de cada eleitor varia conforme o número de votos válidos contabilizados no seu segmento:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="segment-weights-cards">
+          <!-- Gerado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- DETALHAMENTO POR SEGMENTO -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="layout-grid" class="w-5 h-5 text-orange-400"></i>
+          Detalhamento por Segmento
+        </h3>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="segments-detail-container">
+          <!-- Gerado via JS para Docentes, Técnicos e Alunos -->
+        </div>
+      </div>
+
+      <!-- DETALHAMENTO DETALHADO POR URNA -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <i data-lucide="table" class="w-5 h-5 text-orange-400"></i>
+          Tabela Geral de Todas as Urnas
+        </h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-800/80 text-slate-300 font-bold uppercase text-[11px] border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-3">Segmento</th>
+                <th class="py-3 px-3">Urna</th>
+                <th class="py-3 px-3 text-orange-400">Nicácio</th>
+                <th class="py-3 px-3 text-emerald-400">Neilor</th>
+                <th class="py-3 px-3 text-slate-300">Branco</th>
+                <th class="py-3 px-3 text-rose-400">Nulo</th>
+                <th class="py-3 px-3 font-bold text-white">Válidos</th>
+                <th class="py-3 px-3 font-bold text-slate-200">Total</th>
+              </tr>
+            </thead>
+            <tbody id="urnas-table-body" class="divide-y divide-slate-800">
+              <!-- Populado via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- ABA 3: GERENCIAR URNAS & CONFIGURAÇÕES -->
+    <!-- ================================================================= -->
+    <section id="view-urnas" class="tab-view hidden space-y-6">
+      
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-white">Gerenciamento de Urnas</h2>
+            <p class="text-xs text-slate-400">Adicione novas urnas físicas a qualquer segmento da eleição</p>
+          </div>
+          <button id="btn-open-add-urna-modal" class="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-orange-500/20 transition-all">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Adicionar Nova Urna</span>
+          </button>
+        </div>
+
+        <!-- Lista de Urnas Agrupadas por Segmento -->
+        <div class="space-y-6" id="urnas-management-list">
+          <!-- Populado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- ZONA DE PERIGO / CONTROLE DE DADOS -->
+      <div class="bg-rose-950/20 border border-rose-900/40 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center gap-2 text-rose-400 font-bold mb-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          <h3>Operações Críticas e Zerésima</h3>
+        </div>
+        <p class="text-xs text-slate-400 mb-4">
+          Cuidado: As ações abaixo afetam permanentemente a contagem de votos gravada na memória local do seu navegador.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button id="btn-reset-all" class="px-4 py-2 rounded-xl bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-xs font-bold border border-rose-700/50 transition-colors flex items-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Zerar Todos os Votos (Zerésima)</span>
+          </button>
+          <button id="btn-export-backup" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Exportar Backup (JSON)</span>
+          </button>
+          <button id="btn-import-backup" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-2">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>Restaurar Backup</span>
+          </button>
+          <input type="file" id="import-file-input" accept=".json" class="hidden">
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: CONFIRMAÇÃO DE DIMINUIÇÃO DE VOTO (-1) -->
+  <!-- ================================================================= -->
+  <div id="modal-confirm-sub" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-scale-up space-y-4">
+      <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+        <i data-lucide="alert-circle" class="w-6 h-6"></i>
+      </div>
+      
+      <div class="text-center">
+        <h3 class="text-lg font-bold text-white">Confirmar Correção</h3>
+        <p class="text-xs text-slate-300 mt-1" id="modal-sub-message">
+          Deseja realmente estornar (-1 voto) de Nicácio nesta urna?
+        </p>
+      </div>
+
+      <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+        <div class="flex justify-between text-slate-400">
+          <span>Segmento:</span>
+          <span class="text-white font-semibold" id="modal-sub-segment">Docentes</span>
+        </div>
+        <div class="flex justify-between text-slate-400">
+          <span>Urna:</span>
+          <span class="text-white font-semibold" id="modal-sub-urna">Urna 01</span>
+        </div>
+        <div class="flex justify-between text-slate-400">
+          <span>Candidato/Opção:</span>
+          <span class="font-bold text-orange-400" id="modal-sub-candidate">Nicácio</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button id="btn-cancel-sub" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors border border-slate-700">
+          Cancelar
+        </button>
+        <button id="btn-confirm-sub" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors shadow-lg shadow-rose-600/30">
+          Sim, Diminuir 1
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: ADICIONAR NOVA URNA -->
+  <!-- ================================================================= -->
+  <div id="modal-add-urna" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-scale-up space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-orange-400"></i>
+          Nova Urna de Votação
+        </h3>
+        <button id="btn-close-modal-add-urna" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-add-urna" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Segmento</label>
+          <select id="modal-urna-segment" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            <option value="docentes">Docentes (1/3)</option>
+            <option value="tecnicos">Técnicos Administrativos (1/3)</option>
+            <option value="alunos">Alunos (1/3)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Nome da Urna</label>
+          <input type="text" id="modal-urna-name" required placeholder="Ex: Urna 02 - Prédio Central" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:ring-2 focus:ring-orange-500 focus:outline-none placeholder-slate-500">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="btn-cancel-modal-add-urna" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-600/30">
+            Criar Urna
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: ZERÉSIMA / CONFIRMAÇÃO DE RESET TOTAL -->
+  <!-- ================================================================= -->
+  <div id="modal-confirm-reset" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-rose-700/60 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-scale-up space-y-4">
+      <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center mx-auto text-rose-400">
+        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+      </div>
+      
+      <div class="text-center">
+        <h3 class="text-lg font-bold text-white">Emitir Zerésima?</h3>
+        <p class="text-xs text-slate-300 mt-1">
+          Isso redefinirá <strong>TODOS os votos</strong> de todas as urnas para ZERO. Esta ação não pode ser desfeita!
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button id="btn-cancel-reset" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors">
+          Cancelar
+        </button>
+        <button id="btn-do-reset" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors shadow-lg shadow-rose-600/30">
+          Zerar Tudo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Notificação Rápida -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300">
+    <div id="toast-icon" class="text-emerald-400">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+    </div>
+    <div id="toast-text" class="text-xs font-semibold">Voto computado com sucesso!</div>
+  </div>
+
+  <!-- Rodapé -->
+  <footer class="mt-auto border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    <p>Sistema de Apuração Paritária • Frontend por @brendan • Armazenamento 100% Local no Navegador</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+  <script>
+    // Inicializa ícones Lucide
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

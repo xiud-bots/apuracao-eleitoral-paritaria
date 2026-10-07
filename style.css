@@ -1,0 +1,123 @@
+/* ==========================================================================
+   ESTILOS CUSTOMIZADOS & RESPONSIVIDADE - APURAÇÃO ELEITORAL
+   Autor: @brendan (Frontend Sênior)
+   ========================================================================== */
+
+/* Remove scrollbar feia mantendo o scroll suave */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom scrollbar para tabelas e containers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Estilos de Abas */
+.tab-btn {
+  color: #94a3b8;
+  border-color: transparent;
+}
+.tab-btn:hover {
+  color: #f8fafc;
+}
+.tab-btn.active {
+  color: #f97316;
+  border-color: #f97316;
+}
+
+/* Efeito de Clique / Feedback Tátil */
+.btn-tactile {
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-tactile:active {
+  transform: scale(0.96);
+}
+
+/* Animações */
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Log Item Animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.log-item-new {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================================================
+   ESTILOS DE IMPRESSÃO (Ata de Apuração / Boletim Oficial)
+   ========================================================================== */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, footer, nav, #btn-toggle-sound, #btn-open-settings, #view-vote, #view-urnas, #btn-print-report, #modal-confirm-sub, #modal-add-urna, #modal-confirm-reset, #toast {
+    display: none !important;
+  }
+  #view-results {
+    display: block !important;
+  }
+  .tab-view {
+    display: block !important;
+  }
+  .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-slate-800\/60, .bg-slate-800\/40 {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    color: #000000 !important;
+  }
+  .text-white, .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400 {
+    color: #111111 !important;
+  }
+  .text-orange-400, .text-orange-500 {
+    color: #c2410c !important;
+  }
+  .text-emerald-400, .text-emerald-500 {
+    color: #15803d !important;
+  }
+  .border-slate-800, .border-slate-700 {
+    border-color: #e2e8f0 !important;
+  }
+  .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md {
+    box-shadow: none !important;
+  }
+}
